@@ -21,7 +21,9 @@
             var settings = {
                 'template' : 'ajax_table_template',
                 'url' : '',
-                'interval' : 5000
+                'interval' : 5000,
+                'beforeUpdate' : null,
+                'afterUpdate': null
             };
             if ( options ) {
                 $.extend( settings, options );
@@ -32,13 +34,20 @@
 
             if (!data){
                 $(this).data('ajaxTable', {
-                    timers : {}
+                    timers : {},
+                    beforeUpdate : settings.beforeUpdate,
+                    afterUpdate : settings.afterUpdate
                 });
                 data = $this.data('ajaxTable');
+                
             }
-
+            
             var selector = this;
             function update(){
+                if (data.beforeUpdate){
+                    data.beforeUpdate();
+                }
+
                 selector.each(function(){
                     var elem = this;
                     $.get(settings.url, function(data){
@@ -47,6 +56,10 @@
                         $("#" + settings.template).tmpl(data).appendTo(body);
                     });
                 });
+
+                if (data.afterUpdate){
+                    data.afterUpdate();
+                }
             }
 
             update();
