@@ -114,8 +114,7 @@
                         }
                         var tableHeaders = selector.children("thead").children("tr").children("th");
                         tableHeaders.removeAttr("sortOrder");
-                        tableHeaders.removeClass("sorted-asc");
-                        tableHeaders.removeClass("sorted-desc");
+                        tableHeaders.removeClass("sorted-asc sorted-desc");
                         th.attr("sortOrder", sortOrder);
                         th.addClass("sorted-"+sortOrder);
                         sort(sortOrder, th.attr("key"));
