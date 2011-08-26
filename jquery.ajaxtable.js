@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Ivan Kolodyazhny (e0ne)
+ * Copyright 2011 Ivan Kolodyazhny
  * All Rights Reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License"); you may
