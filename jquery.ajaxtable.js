@@ -1,6 +1,6 @@
 /**
- * Copyright 2011 Ivan Kolodyazhny
- * All Rights Reserved.
+ *  Copyright (c) 2011 Grid Dynamics Consulting Services, Inc, All Rights Reserved
+ *  http://www.griddynamics.com
  *
  *    Licensed under the Apache License, Version 2.0 (the "License"); you may
  *    not use this file except in compliance with the License. You may obtain
@@ -13,6 +13,17 @@
  *    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  *    License for the specific language governing permissions and limitations
  *    under the License.
+ *
+ *    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 (function( $ ){
     var methods = {
@@ -25,7 +36,9 @@
                 'beforeUpdate' : null,
                 'afterUpdate' : null,
                 'sortable': false,
-                'cacheable': false // NOTE: this param isn't used in current version
+                'cacheable': false, // NOTE: this param isn't used in current version
+                'beforeSort': null,
+                'afterSort': null
             };
             if ( options ) {
                 $.extend( settings, options );
@@ -39,6 +52,8 @@
                     timers : {},
                     beforeUpdate : settings.beforeUpdate,
                     afterUpdate : settings.afterUpdate,
+                    beforeSort : settings.beforeSort,
+                    afterSort : settings.afterSort,
                     cachedData: null
                 });
                 data = $this.data('ajaxTable');
@@ -47,19 +62,26 @@
            
             var selector = this;
 
-            var findRow = function(dataItems, dataValue, column){
-                for (var i=0; i<dataItems.length; i++){
-                    var dataItem = dataItems[i];
-                    for (var p in dataItem){
-                        if (p == column && dataItem[p] == dataValue){
-                            return dataItem;
-                        }
-                    }
-                }
-                return null;
-            }
+            var sort2dArray = function(array){
+                // note: select sort method
+                for(var i=0; i < array.length; i++) {
+                    var k=i; var x=array[i];
 
+                    for( var j=i+1; j < array.length; j++)
+                      if (array[j][0] < x[0] ) {
+                        k=j; x=array[j];
+                      }
+
+                    array[k] = array[i];
+                    array[i] = x;
+                  }
+                return array;
+            }
             var sort = function(sortOrder, column){
+                if (data.beforeSort){
+                    data.beforeSort();
+                }
+
                 var sorted_data = [];
                 if (data.cachedData){
                     var sorted_column = new Array();
@@ -73,19 +95,16 @@
                                 dataItem = currentItem[pi];
                             }
                         }
-                        sorted_column.push(dataItem);
+                        sorted_column.push([dataItem, currentItem]);
                     }
-                    sorted_column = sorted_column.sort();
+                    sorted_column = sort2dArray(sorted_column);
 
                     if (sortOrder == 'desc') {
                         sorted_column = sorted_column.reverse();
                     }
 
                     for (i=0; i< sorted_column.length; i++){
-                        // TODO: fix issue with non unique data in columns
-                        // need to check all fields
-                        var line = findRow(data.cachedData, sorted_column[i], column)
-                        sorted_data.push(line);
+                        sorted_data.push(sorted_column[i][1]);
                     }
                 }
                 selector.each(function(){
@@ -94,12 +113,15 @@
                     body.html("");
                     $("#" + settings.template).tmpl(sorted_data).appendTo(body);
                 });
+                if (data.afterSort){
+                    data.afterSort();
+                }
             }
 
             var initSort = function(isUpdated, tableData){
                 var cache = new Array();
                 selector.each(function(){
-                    $(this).children("thead").children("tr").children("th").click(function(){
+                    $(this).children("thead").children("tr").children("th[key]").click(function(){
                         var th = $(this);
                         var sortOrder = th.attr("sortOrder");
 
@@ -114,7 +136,8 @@
                         }
                         var tableHeaders = selector.children("thead").children("tr").children("th");
                         tableHeaders.removeAttr("sortOrder");
-                        tableHeaders.removeClass("sorted-asc sorted-desc");
+                        tableHeaders.removeClass("sorted-asc");
+                        tableHeaders.removeClass("sorted-desc");
                         th.attr("sortOrder", sortOrder);
                         th.addClass("sorted-"+sortOrder);
                         sort(sortOrder, th.attr("key"));
@@ -180,7 +203,7 @@
         } else if ( typeof method === 'object' || ! method ) {
             return methods.init.apply( this, arguments );
         } else {
-            $.error( 'Method ' +  method + ' does not exist on jQuery.tooltip' );
+            $.error( 'Method ' +  method + ' does not exist on jQuery.ajaxTable' );
         }
     };
 })( jQuery );
