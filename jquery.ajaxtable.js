@@ -176,8 +176,6 @@
                             selector.children("thead").children("tr").children("th.sorted-desc").each(function(){
                                 sort($(this).attr("sortOrder"), $(this).attr("key"));
                             });
-
-                        setTimeout(3000, update)
                         }
                     });
                 });
