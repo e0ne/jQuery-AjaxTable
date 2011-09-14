@@ -30,6 +30,7 @@
         init : function( options ) {
             var settings = {
                 'template' : 'ajax_table_template',
+                'emptyTemplate' : null,
                 'url' : '',
                 'autoUpdate' : true,
                 'interval' : 5000,
@@ -38,7 +39,8 @@
                 'sortable': false,
                 'cacheable': false, // NOTE: this param isn't used in current version
                 'beforeSort': null,
-                'afterSort': null
+                'afterSort': null,
+                'processResponse': null
             };
             if ( options ) {
                 $.extend( settings, options );
@@ -54,6 +56,7 @@
                     afterUpdate : settings.afterUpdate,
                     beforeSort : settings.beforeSort,
                     afterSort : settings.afterSort,
+                    processResponse : settings.processResponse,
                     cachedData: null
                 });
                 data = $this.data('ajaxTable');
@@ -158,7 +161,17 @@
                     $.get(settings.url, function(response){
                         var body = $(elem).children("tbody");
                         body.html("");
-                        $("#" + settings.template).tmpl(response).appendTo(body);
+                        if (data.processResponse) {
+                        	if (data.processResponse(response, this, settings) != 0) {
+                            	return;
+                            }
+                        }
+                        if (response.table.length == 0 && settings.emptyTemplate != null) {
+                            $("#" + settings.emptyTemplate).tmpl(response.table).appendTo(body);
+                        } else
+                        {
+                            $("#" + settings.template).tmpl(response.table).appendTo(body);
+                        }
 
                         if (data.afterUpdate){
                             data.afterUpdate();
@@ -168,7 +181,7 @@
                             if (settings.cacheable){
                                 isUpdated = false;
                             }
-                            initSort(isUpdated, response);
+                            initSort(isUpdated, response.table);
                             selector.children("thead").children("tr").children("th.sorted-asc").each(function(){
 
                                 sort($(this).attr("sortOrder"), $(this).attr("key"));
