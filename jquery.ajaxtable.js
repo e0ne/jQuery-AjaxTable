@@ -25,6 +25,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 (function( $ ){
     var methods = {
         init : function( options ) {
@@ -57,7 +58,8 @@
                     beforeSort : settings.beforeSort,
                     afterSort : settings.afterSort,
                     processResponse : settings.processResponse,
-                    cachedData: null
+                    cachedData: null,
+                    inputs: null
                 });
                 data = $this.data('ajaxTable');
 
@@ -149,12 +151,29 @@
                 data.cachedData = tableData;
             }
 
+            function InputData() {
+                this.id = null;
+                this.value = null;
+                this.checked = null;
+            }
+
             function update(){
-                selector.children("thead").children("tr").children("th").unbind("click");
-                
                 if (data.beforeUpdate){
                     data.beforeUpdate();
                 }
+
+                data.inputs = new Array();
+                selector.find(":input").each(function(){
+                    var d = new InputData();
+                    d.id = this.id;
+                    d.value = this.value;
+                    if ($(this).attr("checked")){
+                        d.checked = true;
+                    }
+                    data.inputs.push(d);
+                });
+
+                selector.children("thead").children("tr").children("th").unbind("click");
 
                 selector.each(function(){
                     var elem = this;
@@ -171,11 +190,18 @@
                         } else
                         {
                             $("#" + settings.template).tmpl(response.table).appendTo(body);
+                            selector.find(":input").each(function(){
+                                for (var i = 0; i < data.inputs.length; i++){
+                                    if (data.inputs[i].id == this.id){
+                                        if (data.inputs[i].checked){
+                                            $(this).attr("checked", true);
+                                        }
+                                        this.value = data.inputs[i].value;
+                                    }
+                                }
+                            });
                         }
 
-                        if (data.afterUpdate){
-                            data.afterUpdate();
-                        }
                         if (settings.sortable){
                             var isUpdated = true;
                             if (settings.cacheable){
@@ -183,12 +209,16 @@
                             }
                             initSort(isUpdated, response.table);
                             selector.children("thead").children("tr").children("th.sorted-asc").each(function(){
-
                                 sort($(this).attr("sortOrder"), $(this).attr("key"));
+
                             });
                             selector.children("thead").children("tr").children("th.sorted-desc").each(function(){
                                 sort($(this).attr("sortOrder"), $(this).attr("key"));
                             });
+                        }
+
+                        if (data.afterUpdate){
+                            data.afterUpdate();
                         }
                     });
                 });
